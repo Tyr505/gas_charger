@@ -1,2 +1,2 @@
 # gas_charger
-Digital gas quantity in gallon sensor
+Digital gas quantity in gallon sensor using a load sensor

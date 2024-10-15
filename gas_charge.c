@@ -14,9 +14,9 @@ BLYNK WI-FI CONNECTION
  *************************************************************/
 
 /* Fill-in information from Blynk Device Info here */
-#define BLYNK_TEMPLATE_ID           "TMPxxxxxx"
-#define BLYNK_TEMPLATE_NAME         "Device"
-#define BLYNK_AUTH_TOKEN            "YourAuthToken"
+#define BLYNK_TEMPLATE_ID           "TMPL22KB59kWj"
+#define BLYNK_TEMPLATE_NAME         "Quickstart Device"
+#define BLYNK_AUTH_TOKEN            "QbFnbnuP4N46qRzD-VRcV-5PR-3DJXEc"
 
 /* Comment this out to disable prints and save space */
 #define BLYNK_PRINT Serial
@@ -34,16 +34,41 @@ BLYNK WI-FI CONNECTION
 char ssid[] = "YourNetworkName";
 char pass[] = "YourPassword";
 
+BlynkTimer timer;
+
 const int LOADCELL_DOUT_PIN = 16;
 const int LOADCELL_SCK_PIN = 4;
 
 HX711 scale;
+BLYNK_WRITE(V0)
+{
+  // Set incoming value from pin V0 to a variable
+  int value = param.asInt();
+
+  // Update state
+  Blynk.virtualWrite(V1, value);
+}
+
+BLYNK_CONNECTED()
+{
+  // Change Web Link Button message to "Congratulations!"
+  Blynk.setProperty(V3, "offImageUrl", "https://static-image.nyc3.cdn.digitaloceanspaces.com/general/fte/congratulations.png");
+  Blynk.setProperty(V3, "onImageUrl",  "https://static-image.nyc3.cdn.digitaloceanspaces.com/general/fte/congratulations_pressed.png");
+  Blynk.setProperty(V3, "url", "https://docs.blynk.io/en/getting-started/what-do-i-need-to-blynk/how-quickstart-device-was-made");
+}
+void myTimerEvent()
+{
+  // You can send any value at any time.
+  // Please don't send more that 10 values per second.
+  Blynk.virtualWrite(V2, millis() / 1000);
+}
 
 void setup()
 {
   // Debug console
   Serial.begin(115200);
   Blynk.begin(BLYNK_AUTH_TOKEN, ssid, pass);
+  timer.setInterval(1000L, myTimerEvent);
   rtc_cpu_freq_config_t config;
   rtc_clk_cpu_freq_get_config(&config);
   rtc_clk_cpu_freq_to_config(RTC_CPU_FREQ_80M, &config);
@@ -57,6 +82,7 @@ void setup()
 void loop()
 {
   Blynk.run();
+  timer.run();
   // You can inject your own code or combine it with other sketches.
   // Check other examples on how to communicate with Blynk. Remember
   // to avoid delay() function!

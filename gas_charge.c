@@ -28,6 +28,10 @@ BLYNK WI-FI CONNECTION
 #include <Arduino.h>
 #include "soc/rtc.h"
 #include "HX711.h"
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+
+LiquidCrystal_I2C lcd(0x27, 16, 2)
 
 // Your WiFi credentials.
 // Set password to "" for open networks.
@@ -38,6 +42,8 @@ BlynkTimer timer;
 
 const int LOADCELL_DOUT_PIN = 16;
 const int LOADCELL_SCK_PIN = 4;
+
+long empty_gallon = 0;
 
 HX711 scale;
 BLYNK_WRITE(V0)
@@ -77,26 +83,71 @@ void setup()
   // You can also specify server:
   //Blynk.begin(BLYNK_AUTH_TOKEN, ssid, pass, "blynk.cloud", 80);
   //Blynk.begin(BLYNK_AUTH_TOKEN, ssid, pass, IPAddress(192,168,1,100), 8080);
+  
+  lcd.init();
+  lcd.backlight();
 }
 
 void loop()
 {
   Blynk.run();
   timer.run();
+  lcd.clear();
   // You can inject your own code or combine it with other sketches.
   // Check other examples on how to communicate with Blynk. Remember
   // to avoid delay() function!
   if (scale.is_ready()) {
     scale.set_scale();    
-    Serial.println("Avaliando...Remova o botijão");
+    lcd.print("Avaliando...Remova o botijão");
     delay(5000);
     scale.tare();
-    Serial.println("Completo!");
-    Serial.print("Coloque o botijão...");
+    lcd.clear()
+    lcd.print("Completo!");
+    lcd.setCursor(0, 1);
+    lcd.print("Coloque o botijão...");
     delay(5000);
-    long reading = scale.get_units(10);
-    Serial.print("Result: ");
-    Serial.println(reading);
+    long reading_ref = scale.get_units(10);
+    lcd.clear
+    lcd.print("Peso atual: ");
+    lcd.setCursor(6, 1);
+    lcd.print(reading_ref)
+    lcd.setCursor(8, 1);
+    lcd.print("kg"); 
+    delay(5000);
+    lcd.clear()
+    lcd.print("Monitorando gás!");
+    delay(5000);
+    lcd.clear()
+   //Galão cheio
+    for(i=1; i<=16;i++){
+      lcd.setCursor(i,1);
+      lcd.print(255);
+      lcd.setCursor(i,2);
+      lcd.print(255);
+    }
+    delay(5000);
+    weights_list [16] = {empty_gallon, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    
+    //Dividindo o peso do galão em 16 intervalos do display
+    for (i=1; i<=16; i++){
+        reading_ref_div = (reading_ref-empty_gallon)/16; 
+        weights_list[i] = weights_list[i-1] + reading_ref_div;     
+    }
+    
+    i = 16;
+    //Esvaziando galão
+    while(i>=0 && i<=16){
+      reading_actual = scale.get_units(10);
+      if(reading_actual == weights_list[i]){
+        lcd.setCursor(i,1);
+        lcd.print(0);
+        lcd.setCursor(i,2);
+        lcd.print(0);
+        i--;
+      }
+      
+    }
+    
   } 
   else {
     Serial.println("Erro, conversão de peso não encontrada");
